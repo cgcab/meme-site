@@ -4,6 +4,7 @@ import { createFileRoute, Navigate } from '@tanstack/react-router';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { login, UnauthorizedError } from '../api';
 import { useAuthentication } from '../contexts/authentication';
+import { stringsRes } from '../resources/strings';
 
 type SearchParams = {
     redirect?: string;
@@ -16,9 +17,9 @@ type Inputs = {
 
 function renderError(error: Error) {
     if (error instanceof UnauthorizedError) {
-        return <FormErrorMessage>Wrong credentials</FormErrorMessage>;
+        return <FormErrorMessage>{stringsRes.login.wrongCredentials}</FormErrorMessage>;
     }
-    return <FormErrorMessage>An unknown error occured, please try again later</FormErrorMessage>;
+    return <FormErrorMessage>{stringsRes.login.unknownError}</FormErrorMessage>;
 }
 
 export const LoginPage: React.FC = () => {
@@ -26,12 +27,17 @@ export const LoginPage: React.FC = () => {
     const { state, authenticate } = useAuthentication();
     const { mutate, isPending, error } = useMutation({
         mutationFn: (data: Inputs) => login(data.username, data.password),
-        onSuccess: ({ jwt }) => {
-            authenticate(jwt);
-        },
+        onSuccess: ({ jwt }) => authenticate(jwt),
     });
-    const { register, handleSubmit } = useForm<Inputs>();
-    const onSubmit: SubmitHandler<Inputs> = async (data) => {
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<Inputs>({
+        defaultValues: { username: 'MemeMaster', password: 'password' }, //TODO: for Testing only
+    });
+
+    const onSubmit: SubmitHandler<Inputs> = (data) => {
         mutate(data);
     };
 
@@ -40,48 +46,45 @@ export const LoginPage: React.FC = () => {
     }
 
     return (
-        <Flex height="full" width="full" alignItems="center" justifyContent="center">
-            <Flex direction="column" bgGradient="linear(to-br, cyan.100, cyan.200)" p={8} borderRadius={16}>
+        <Flex height="100vh" width="full" alignItems="center" justifyContent="center">
+            <Flex
+                direction="column"
+                bgGradient="linear(to-br, cyan.100, cyan.200)"
+                p={8}
+                borderRadius="md"
+                boxShadow="lg"
+            >
                 <Heading as="h2" size="md" textAlign="center" mb={4}>
-                    Login
+                    {stringsRes.login.heading}
                 </Heading>
                 <Text textAlign="center" mb={4}>
-                    Welcome back! 👋
-                    <br />
-                    Please enter your credentials.
+                    {stringsRes.login.welcomeMessage}
                 </Text>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <FormControl>
-                        <FormLabel>Username</FormLabel>
+                    <FormControl isInvalid={!!errors.username || !!error} mb={4}>
+                        <FormLabel>{stringsRes.login.usernameLabel}</FormLabel>
                         <Input
+                            bg="white"
+                            size="sm"
                             type="text"
-                            placeholder="Enter your username"
-                            bg="white"
-                            size="sm"
-                            {...register('username')}
+                            placeholder={stringsRes.login.usernamePlaceholder}
+                            {...register('username', { required: stringsRes.login.usernameRequired })}
                         />
+                        {errors.username && <FormErrorMessage>{errors.username.message}</FormErrorMessage>}
                     </FormControl>
-                    <FormControl isInvalid={error !== null}>
-                        <FormLabel>Password</FormLabel>
+                    <FormControl isInvalid={!!errors.password || !!error} mb={4}>
+                        <FormLabel>{stringsRes.login.passwordLabel}</FormLabel>
                         <Input
-                            type="password"
-                            placeholder="Enter your password"
-                            bg="white"
                             size="sm"
-                            {...register('password')}
+                            bg="white"
+                            type="password"
+                            placeholder={stringsRes.login.passwordPlaceholder}
+                            {...register('password', { required: stringsRes.login.passwordRequired })}
                         />
-                        {error !== null && renderError(error)}
+                        {error && renderError(error)}
                     </FormControl>
-                    <Button
-                        color="white"
-                        colorScheme="cyan"
-                        mt={4}
-                        size="sm"
-                        type="submit"
-                        width="full"
-                        isLoading={isPending}
-                    >
-                        Login
+                    <Button colorScheme="cyan" mt={4} size="sm" type="submit" width="full" isLoading={isPending}>
+                        {stringsRes.login.buttonText}
                     </Button>
                 </form>
             </Flex>
@@ -90,10 +93,8 @@ export const LoginPage: React.FC = () => {
 };
 
 export const Route = createFileRoute('/login')({
-    validateSearch: (search): SearchParams => {
-        return {
-            redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
-        };
-    },
+    validateSearch: (search): SearchParams => ({
+        redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+    }),
     component: LoginPage,
 });

@@ -1,5 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
+// Error handling classes
 export class UnauthorizedError extends Error {
     constructor() {
         super('Unauthorized');
@@ -12,57 +13,56 @@ export class NotFoundError extends Error {
     }
 }
 
+// Check response status and handle specific errors
 function checkStatus(response: Response) {
-    if (response.status === 401) {
-        throw new UnauthorizedError();
+    switch (response.status) {
+        case 401:
+            throw new UnauthorizedError();
+        case 404:
+            throw new NotFoundError();
+        default:
+            return response;
     }
-    if (response.status === 404) {
-        throw new NotFoundError();
-    }
-    return response;
 }
 
-export type LoginResponse = {
-    jwt: string;
-};
+// Login response type
+export type LoginResponse = { jwt: string };
 
 /**
- * Authenticate the user with the given credentials
- * @param username
- * @param password
- * @returns
+ * Authenticate user and retrieve JWT token
+ * @param username - User's username
+ * @param password - User's password
+ * @returns JWT token in response
  */
 export async function login(username: string, password: string): Promise<LoginResponse> {
-    return await fetch(`${BASE_URL}/authentication/login`, {
+    const response = await fetch(`${BASE_URL}/authentication/login`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
-    }).then((res) => checkStatus(res).json());
+    });
+    return checkStatus(response).json();
 }
 
-export type GetUserByIdResponse = {
-    id: string;
-    username: string;
-    pictureUrl: string;
-};
+// GetUserById response type
+export type GetUserByIdResponse = { id: string; username: string; pictureUrl: string };
 
 /**
- * Get a user by their id
- * @param token
- * @param id
- * @returns
+ * Fetch user data by user ID
+ * @param token - JWT token for authorization
+ * @param id - User's unique ID
+ * @returns User data
  */
 export async function getUserById(token: string, id: string): Promise<GetUserByIdResponse> {
-    return await fetch(`${BASE_URL}/users/${id}`, {
+    const response = await fetch(`${BASE_URL}/users/${id}`, {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
         },
-    }).then((res) => checkStatus(res).json());
+    });
+    return checkStatus(response).json();
 }
 
+// GetMemes response type
 export type GetMemesResponse = {
     total: number;
     pageSize: number;
@@ -72,30 +72,28 @@ export type GetMemesResponse = {
         pictureUrl: string;
         description: string;
         commentsCount: string;
-        texts: {
-            content: string;
-            x: number;
-            y: number;
-        }[];
+        texts: { content: string; x: number; y: number }[];
         createdAt: string;
     }[];
 };
 
 /**
- * Get the list of memes for a given page
- * @param token
- * @param page
- * @returns
+ * Fetch a paginated list of memes
+ * @param token - JWT token for authorization
+ * @param page - Page number to retrieve
+ * @returns Memes data for the given page
  */
 export async function getMemes(token: string, page: number): Promise<GetMemesResponse> {
-    return await fetch(`${BASE_URL}/memes?page=${page}`, {
+    const response = await fetch(`${BASE_URL}/memes?page=${page}`, {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
         },
-    }).then((res) => checkStatus(res).json());
+    });
+    return checkStatus(response).json();
 }
 
+// GetMemeComments response type
 export type GetMemeCommentsResponse = {
     total: number;
     pageSize: number;
@@ -109,20 +107,23 @@ export type GetMemeCommentsResponse = {
 };
 
 /**
- * Get comments for a meme
- * @param token
- * @param memeId
- * @returns
+ * Fetch comments for a specific meme
+ * @param token - JWT token for authorization
+ * @param memeId - ID of the meme to fetch comments for
+ * @param page - Page number of comments to retrieve
+ * @returns Comments data for the specified meme
  */
 export async function getMemeComments(token: string, memeId: string, page: number): Promise<GetMemeCommentsResponse> {
-    return await fetch(`${BASE_URL}/memes/${memeId}/comments?page=${page}`, {
+    const response = await fetch(`${BASE_URL}/memes/${memeId}/comments?page=${page}`, {
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
         },
-    }).then((res) => checkStatus(res).json());
+    });
+    return checkStatus(response).json();
 }
 
+// CreateComment response type
 export type CreateCommentResponse = {
     id: string;
     content: string;
@@ -132,22 +133,24 @@ export type CreateCommentResponse = {
 };
 
 /**
- * Create a comment for a meme
- * @param token
- * @param memeId
- * @param content
+ * Create a new comment on a meme
+ * @param token - JWT token for authorization
+ * @param memeId - ID of the meme to comment on
+ * @param content - Content of the comment
+ * @returns The newly created comment data
  */
 export async function createMemeComment(
     token: string,
     memeId: string,
     content: string,
 ): Promise<CreateCommentResponse> {
-    return await fetch(`${BASE_URL}/memes/${memeId}/comments`, {
+    const response = await fetch(`${BASE_URL}/memes/${memeId}/comments`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ content }),
-    }).then((res) => checkStatus(res).json());
+    });
+    return checkStatus(response).json();
 }

@@ -1,20 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import {
-    Avatar,
-    Box,
-    Collapse,
-    Flex,
-    Icon,
-    LinkBox,
-    LinkOverlay,
-    StackDivider,
-    Text,
-    Input,
-    VStack,
-} from '@chakra-ui/react';
-import { CaretDown, CaretUp, Chat } from '@phosphor-icons/react';
-import { format } from 'timeago.js';
+import { Flex, StackDivider, Text, VStack } from '@chakra-ui/react';
 import {
     createMemeComment,
     getMemeComments,
@@ -22,217 +8,134 @@ import {
     getMemes,
     GetMemesResponse,
     getUserById,
-    GetUserByIdResponse,
+    // GetUserByIdResponse,
 } from '../../api';
 import { useAuthToken } from '../../contexts/authentication';
 import { Loader } from '../../components/loader';
-import { MemePicture } from '../../components/meme-picture';
 import { useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { stringsRes } from '../../resources/strings';
+import { MemeItem } from '../../components/memeItem';
 
-export const MemeFeedPage: React.FC = () => {
+//======================================//
+//=============== Fetchs ===============//
+//======================================//
+
+// Fetch memes with authors cached separately to avoid redundant calls
+const fetchMemes = (token: string, queryClient: QueryClient) => async () => {
+    const memes: GetMemesResponse['results'] = [];
+    const firstPage = await getMemes(token, 1);
+    memes.push(...firstPage.results);
+
+    // Removed cause we don't need to charge all the pages at first
+    // const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
+    // for (let i = 0; i < remainingPages; i++) {
+    //     const page = await getMemes(token, i + 2);
+    //     memes.push(...page.results);
+    // }
+
+    // Map over memes to retrieve or cache authors and comments
+    return Promise.all(
+        memes.map(async (meme) => {
+            // Retrieve cached author or fetch if not available
+            const author = await queryClient.fetchQuery({
+                queryKey: ['user', meme.authorId],
+                queryFn: () => getUserById(token, meme.authorId),
+                staleTime: 1000 * 60 * 60 * 24, // 24 hours
+            });
+
+            // Fetch comments for the meme
+            const comments = await fetchComments(token, meme.id, queryClient);
+            return { ...meme, author, comments };
+        }),
+    );
+};
+
+// Fetch comments for a meme
+const fetchComments = async (token: string, memeId: string, queryClient: QueryClient) => {
+    const comments: GetMemeCommentsResponse['results'] = [];
+    const firstPage = await getMemeComments(token, memeId, 1);
+    comments.push(...firstPage.results);
+
+    const remainingCommentPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
+    for (let i = 0; i < remainingCommentPages; i++) {
+        const page = await getMemeComments(token, memeId, i + 2);
+        comments.push(...page.results);
+    }
+
+    return Promise.all(
+        comments.map(async (comment) => {
+            const author = await queryClient.fetchQuery({
+                queryKey: ['user', comment.authorId],
+                queryFn: () => getUserById(token, comment.authorId),
+                staleTime: 1000 * 60 * 60 * 24, // 24 hours
+            });
+            return { ...comment, author };
+        }),
+    );
+};
+
+//=========================================//
+//=============== Component ===============//
+//=========================================//
+
+const MemeFeedPage: React.FC = () => {
     const token = useAuthToken();
+    const { id } = jwtDecode<{ id: string }>(token);
+
+    const queryClient = useQueryClient();
+
+    // Query for memes, with author data loaded separately
     const { isLoading, data: memes } = useQuery({
         queryKey: ['memes'],
-        queryFn: async () => {
-            const memes: GetMemesResponse['results'] = [];
-            const firstPage = await getMemes(token, 1);
-            memes.push(...firstPage.results);
-            const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
-            for (let i = 0; i < remainingPages; i++) {
-                const page = await getMemes(token, i + 2);
-                memes.push(...page.results);
-            }
-            const memesWithAuthorAndComments = [];
-            for (const meme of memes) {
-                const author = await getUserById(token, meme.authorId);
-                const comments: GetMemeCommentsResponse['results'] = [];
-                const firstPage = await getMemeComments(token, meme.id, 1);
-                comments.push(...firstPage.results);
-                const remainingCommentPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
-                for (let i = 0; i < remainingCommentPages; i++) {
-                    const page = await getMemeComments(token, meme.id, i + 2);
-                    comments.push(...page.results);
-                }
-                const commentsWithAuthor: (GetMemeCommentsResponse['results'][0] & {
-                    author: GetUserByIdResponse;
-                })[] = [];
-                for (const comment of comments) {
-                    const author = await getUserById(token, comment.authorId);
-                    commentsWithAuthor.push({ ...comment, author });
-                }
-                memesWithAuthorAndComments.push({
-                    ...meme,
-                    author,
-                    comments: commentsWithAuthor,
-                });
-            }
-            return memesWithAuthorAndComments;
-        },
+        queryFn: fetchMemes(token, queryClient),
     });
+
+    // Query for current user data with a 24-hour stale time
     const { data: user } = useQuery({
-        queryKey: ['user'],
-        queryFn: async () => {
-            return await getUserById(token, jwtDecode<{ id: string }>(token).id);
-        },
+        queryKey: ['user', id],
+        queryFn: () => getUserById(token, id),
+        staleTime: 1000 * 60 * 60 * 24, // 24 hours
     });
+
     const [openedCommentSection, setOpenedCommentSection] = useState<string | null>(null);
-    const [commentContent, setCommentContent] = useState<{
-        [key: string]: string;
-    }>({});
+    const [commentContent, setCommentContent] = useState<{ [key: string]: string }>({});
+
     const { mutate } = useMutation({
         mutationFn: async (data: { memeId: string; content: string }) => {
             await createMemeComment(token, data.memeId, data.content);
         },
     });
+
     if (isLoading) {
         return <Loader data-testid="meme-feed-loader" />;
     }
+
     return (
         <Flex width="full" height="full" justifyContent="center" overflowY="auto">
             <VStack p={4} width="full" maxWidth={800} divider={<StackDivider border="gray.200" />}>
-                {memes?.map((meme) => {
-                    return (
-                        <VStack key={meme.id} p={4} width="full" align="stretch">
-                            <Flex justifyContent="space-between" alignItems="center">
-                                <Flex>
-                                    <Avatar
-                                        borderWidth="1px"
-                                        borderColor="gray.300"
-                                        size="xs"
-                                        name={meme.author.username}
-                                        src={meme.author.pictureUrl}
-                                    />
-                                    <Text ml={2} data-testid={`meme-author-${meme.id}`}>
-                                        {meme.author.username}
-                                    </Text>
-                                </Flex>
-                                <Text fontStyle="italic" color="gray.500" fontSize="small">
-                                    {format(meme.createdAt)}
-                                </Text>
-                            </Flex>
-                            <MemePicture
-                                pictureUrl={meme.pictureUrl}
-                                texts={meme.texts}
-                                dataTestId={`meme-picture-${meme.id}`}
-                            />
-                            <Box>
-                                <Text fontWeight="bold" fontSize="medium" mb={2}>
-                                    Description:{' '}
-                                </Text>
-                                <Box p={2} borderRadius={8} border="1px solid" borderColor="gray.100">
-                                    <Text
-                                        color="gray.500"
-                                        whiteSpace="pre-line"
-                                        data-testid={`meme-description-${meme.id}`}
-                                    >
-                                        {meme.description}
-                                    </Text>
-                                </Box>
-                            </Box>
-                            <LinkBox as={Box} py={2} borderBottom="1px solid black">
-                                <Flex justifyContent="space-between" alignItems="center">
-                                    <Flex alignItems="center">
-                                        <LinkOverlay
-                                            data-testid={`meme-comments-section-${meme.id}`}
-                                            cursor="pointer"
-                                            onClick={() =>
-                                                setOpenedCommentSection(
-                                                    openedCommentSection === meme.id ? null : meme.id,
-                                                )
-                                            }
-                                        >
-                                            <Text data-testid={`meme-comments-count-${meme.id}`}>
-                                                {meme.commentsCount} comments
-                                            </Text>
-                                        </LinkOverlay>
-                                        <Icon
-                                            as={openedCommentSection !== meme.id ? CaretDown : CaretUp}
-                                            ml={2}
-                                            mt={1}
-                                        />
-                                    </Flex>
-                                    <Icon as={Chat} />
-                                </Flex>
-                            </LinkBox>
-                            <Collapse in={openedCommentSection === meme.id} animateOpacity>
-                                <Box mb={6}>
-                                    <form
-                                        onSubmit={(event) => {
-                                            event.preventDefault();
-                                            if (commentContent[meme.id]) {
-                                                mutate({
-                                                    memeId: meme.id,
-                                                    content: commentContent[meme.id],
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <Flex alignItems="center">
-                                            <Avatar
-                                                borderWidth="1px"
-                                                borderColor="gray.300"
-                                                name={user?.username}
-                                                src={user?.pictureUrl}
-                                                size="sm"
-                                                mr={2}
-                                            />
-                                            <Input
-                                                placeholder="Type your comment here..."
-                                                onChange={(event) => {
-                                                    setCommentContent({
-                                                        ...commentContent,
-                                                        [meme.id]: event.target.value,
-                                                    });
-                                                }}
-                                                value={commentContent[meme.id]}
-                                            />
-                                        </Flex>
-                                    </form>
-                                </Box>
-                                <VStack align="stretch" spacing={4}>
-                                    {meme.comments.map((comment) => (
-                                        <Flex key={comment.id}>
-                                            <Avatar
-                                                borderWidth="1px"
-                                                borderColor="gray.300"
-                                                size="sm"
-                                                name={comment.author.username}
-                                                src={comment.author.pictureUrl}
-                                                mr={2}
-                                            />
-                                            <Box p={2} borderRadius={8} bg="gray.50" flexGrow={1}>
-                                                <Flex justifyContent="space-between" alignItems="center">
-                                                    <Flex>
-                                                        <Text
-                                                            data-testid={`meme-comment-author-${meme.id}-${comment.id}`}
-                                                        >
-                                                            {comment.author.username}
-                                                        </Text>
-                                                    </Flex>
-                                                    <Text fontStyle="italic" color="gray.500" fontSize="small">
-                                                        {format(comment.createdAt)}
-                                                    </Text>
-                                                </Flex>
-                                                <Text
-                                                    color="gray.500"
-                                                    whiteSpace="pre-line"
-                                                    data-testid={`meme-comment-content-${meme.id}-${comment.id}`}
-                                                >
-                                                    {comment.content}
-                                                </Text>
-                                            </Box>
-                                        </Flex>
-                                    ))}
-                                </VStack>
-                            </Collapse>
-                        </VStack>
-                    );
-                })}
+                {memes?.length ? (
+                    memes.map((meme) => (
+                        <MemeItem
+                            key={meme.id}
+                            meme={meme}
+                            user={user}
+                            commentContent={commentContent}
+                            setCommentContent={setCommentContent}
+                            openedCommentSection={openedCommentSection}
+                            setOpenedCommentSection={setOpenedCommentSection}
+                            mutate={mutate}
+                        />
+                    ))
+                ) : (
+                    <Text>{stringsRes.home.noMeme}</Text>
+                )}
             </VStack>
         </Flex>
     );
 };
+
+export default MemeFeedPage;
 
 export const Route = createFileRoute('/_authentication/')({
     component: MemeFeedPage,
