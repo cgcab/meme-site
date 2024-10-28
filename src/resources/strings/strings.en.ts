@@ -2,6 +2,7 @@ export default {
     common: {
         cancel: 'Cancel',
         submit: 'Submit',
+        description: 'Description:',
     },
     home: {
         noMeme: 'No memes available',

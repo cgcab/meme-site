@@ -2,6 +2,7 @@ export default {
     common: {
         cancel: 'Annuler',
         submit: 'Soumettre',
+        description: 'Description :',
     },
     home: {
         noMeme: 'Aucun mème disponible',

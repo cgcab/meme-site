@@ -3,6 +3,7 @@ import { CaretDown, CaretUp, Chat } from '@phosphor-icons/react';
 import { format } from 'timeago.js';
 import { MemePicture } from './meme-picture';
 import { CommentSection } from './commentSection';
+import { stringsRes } from '../resources/strings';
 
 // Individual Meme item component
 export const MemeItem = ({
@@ -43,7 +44,7 @@ export const MemeItem = ({
         <MemePicture pictureUrl={meme.pictureUrl} texts={meme.texts} dataTestId={`meme-picture-${meme.id}`} />
         <Box>
             <Text fontWeight="bold" fontSize="medium" mb={2}>
-                Description:
+                {stringsRes.common.description}
             </Text>
             <Box p={2} borderRadius={8} border="1px solid" borderColor="gray.100">
                 <Text color="gray.500" whiteSpace="pre-line" data-testid={`meme-description-${meme.id}`}>
