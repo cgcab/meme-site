@@ -7,14 +7,16 @@ import { MemePictureProps } from './meme-picture';
 export const UploadSection = ({
     onDrop,
     memePicture,
+    onUpdateTexts,
 }: {
     onDrop: (file: File) => void;
     memePicture: MemePictureProps | undefined;
+    onUpdateTexts?: (updatedTexts: { content: string; x: number; y: number }[]) => void;
 }) => (
     <Box>
         <Heading as="h2" size="md" mb={2}>
             {stringsRes.create.uploadPicture}
         </Heading>
-        <MemeEditor onDrop={onDrop} memePicture={memePicture} />
+        <MemeEditor onDrop={onDrop} memePicture={memePicture} onUpdateTexts={onUpdateTexts} />
     </Box>
 );

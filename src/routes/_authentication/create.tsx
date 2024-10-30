@@ -43,6 +43,10 @@ const CreateMemePage = () => {
         setTexts((prevTexts) => prevTexts.map((text, i) => (i === index ? { ...text, content: newContent } : text)));
     };
 
+    const handleUpdateTexts = (updatedTexts: { content: string; x: number; y: number }[]) => {
+        setTexts(updatedTexts);
+    };
+
     const handleSubmit = async () => {
         if (picture) {
             await createMeme(token, picture, texts, description)
@@ -60,7 +64,7 @@ const CreateMemePage = () => {
         <Flex width="full" height="full">
             <Box flexGrow={1} height="full" p={4} overflowY="auto">
                 <VStack spacing={5} align="stretch">
-                    <UploadSection onDrop={handleDrop} memePicture={memePicture} />
+                    <UploadSection onDrop={handleDrop} memePicture={memePicture} onUpdateTexts={handleUpdateTexts} />
                     <DescriptionSection description={description} setDescription={setDescription} />
                 </VStack>
             </Box>

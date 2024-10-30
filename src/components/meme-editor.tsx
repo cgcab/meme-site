@@ -7,6 +7,7 @@ import { stringsRes } from '../resources/strings';
 export type MemeEditorProps = {
     onDrop: (file: File) => void;
     memePicture?: MemePictureProps | undefined;
+    onUpdateTexts?: (updatedTexts: { content: string; x: number; y: number }[]) => void;
 };
 
 function renderNoPicture() {
@@ -21,7 +22,11 @@ function renderNoPicture() {
     );
 }
 
-function renderMemePicture(memePicture: MemePictureProps, open: () => void) {
+function renderMemePicture(
+    memePicture: MemePictureProps,
+    open: () => void,
+    onUpdateTexts?: (updatedTexts: { content: string; x: number; y: number }[]) => void,
+) {
     return (
         <Box
             width="full"
@@ -36,7 +41,7 @@ function renderMemePicture(memePicture: MemePictureProps, open: () => void) {
                 },
             }}
         >
-            <MemePicture {...memePicture} />
+            <MemePicture {...memePicture} onUpdateTexts={onUpdateTexts} />
             <Button
                 className="change-picture-button"
                 leftIcon={<Icon as={Pencil} boxSize={4} />}
@@ -54,7 +59,7 @@ function renderMemePicture(memePicture: MemePictureProps, open: () => void) {
     );
 }
 
-export const MemeEditor: React.FC<MemeEditorProps> = ({ onDrop, memePicture }) => {
+export const MemeEditor: React.FC<MemeEditorProps> = ({ onDrop, memePicture, onUpdateTexts }) => {
     const { getRootProps, getInputProps, open } = useDropzone({
         onDrop: (files: File[]) => {
             if (files.length === 0) {
@@ -78,7 +83,7 @@ export const MemeEditor: React.FC<MemeEditorProps> = ({ onDrop, memePicture }) =
                 px={1}
             >
                 <input {...getInputProps()} />
-                {memePicture ? renderMemePicture(memePicture, open) : renderNoPicture()}
+                {memePicture ? renderMemePicture(memePicture, open, onUpdateTexts) : renderNoPicture()}
             </Box>
         </AspectRatio>
     );
