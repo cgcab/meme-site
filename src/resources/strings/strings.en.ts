@@ -21,6 +21,7 @@ export default {
         selectPicture: 'Select a picture',
         dropPicture: 'or drop it in this area',
         changePicture: 'Change picture',
+        defaultCaption: 'New caption',
     },
     header: {
         title: 'MemeFactory',

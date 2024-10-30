@@ -8,6 +8,7 @@ import { CaptionSidebar } from '../../components/captionSidebar';
 import { createMeme } from '../../api';
 import { useAuthToken } from '../../contexts/authentication';
 import { Picture } from '../../apiTypes';
+import { stringsRes } from '../../resources/strings';
 
 const CreateMemePage = () => {
     const token = useAuthToken();
@@ -28,7 +29,7 @@ const CreateMemePage = () => {
         setTexts((prevTexts) => [
             ...prevTexts,
             {
-                content: `New caption ${prevTexts.length + 1}`,
+                content: `${stringsRes.editor.defaultCaption} ${prevTexts.length + 1}`,
                 x: Math.floor(Math.random() * 400),
                 y: Math.floor(Math.random() * 225),
             },
