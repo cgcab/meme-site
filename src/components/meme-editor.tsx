@@ -6,7 +6,7 @@ import { stringsRes } from '../resources/strings';
 
 export type MemeEditorProps = {
     onDrop: (file: File) => void;
-    memePicture?: MemePictureProps;
+    memePicture?: MemePictureProps | undefined;
 };
 
 function renderNoPicture() {

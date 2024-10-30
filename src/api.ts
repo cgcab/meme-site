@@ -4,7 +4,10 @@ import {
     GetUserByIdResponse,
     GetMemesResponse,
     GetMemeCommentsResponse,
+    CreateMemeResponse,
+    Picture,
 } from './apiTypes';
+import { MemePictureProps } from './components/meme-picture';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -121,5 +124,69 @@ export async function createMemeComment(
         },
         body: JSON.stringify({ content }),
     });
+    return checkStatus(response).json();
+}
+
+/**
+ * Creates a new meme by sending a POST request with image data, text annotations,
+ * and metadata in a multipart/form-data format.
+ *
+ * @async
+ * @function createMeme
+ * @param {string} token - The authorization token to access the meme creation API.
+ * @param {Picture} picture - The binary data of the meme image or a file Blob
+ *                                      representing the image to be uploaded.
+ * @param {MemePictureProps['texts']} texts - An array of text objects to be added to the meme,
+ *                                            each containing content, x, and y properties.
+ *                                            Each text object should follow the structure:
+ *                                            { content: string, x: number, y: number }.
+ * @returns {Promise<CreateMemeResponse>} A promise that resolves to a `CreateMemeResponse` object,
+ *                                        which contains the response from the server, including
+ *                                        the new meme ID and status.
+ *
+ * @throws {Error} Throws an error if the request fails or if the server response
+ *                 indicates an error status.
+ *
+ * @example
+ * const token = "your-auth-token";
+ * const picture = new Blob([...], { type: 'image/jpeg' }); // Your image data here
+ * const texts = [
+ *   { content: "Caption 1", x: 100, y: 50 },
+ *   { content: "Caption 2", x: 42, y: 84 }
+ * ];
+ *
+ * createMeme(token, picture, texts)
+ *   .then(response => console.log("Meme created:", response))
+ *   .catch(error => console.error("Error creating meme:", error));
+ */
+export async function createMeme(
+    token: string,
+    picture: Picture,
+    texts: MemePictureProps['texts'],
+    description?: string,
+): Promise<CreateMemeResponse> {
+    const formData = new FormData();
+
+    // Add binary picture data
+    formData.append('Picture', picture.file);
+
+    // Add a description, or default
+    formData.append('Description', description || 'Super Meme');
+
+    // Add text data with positions
+    texts.forEach((text, index) => {
+        formData.append(`Texts[${index}][Content]`, text.content);
+        formData.append(`Texts[${index}][X]`, '' + Math.floor(text.x));
+        formData.append(`Texts[${index}][Y]`, '' + Math.floor(text.y));
+    });
+
+    const response = await fetch(`${BASE_URL}/memes`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`, // only add Authorization header; Content-Type will be set automatically
+        },
+        body: formData,
+    });
+
     return checkStatus(response).json();
 }

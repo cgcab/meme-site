@@ -38,6 +38,11 @@ export interface CommentExtended extends Comment {
     author: User;
 }
 
+export interface Picture {
+    url: string;
+    file: File;
+}
+
 // ============================= //
 // =========== API ============= //
 // ============================= //
@@ -64,3 +69,5 @@ export type GetMemeCommentsResponse = {
 
 // CreateComment response type
 export type CreateCommentResponse = Comment;
+
+export type CreateMemeResponse = Meme;

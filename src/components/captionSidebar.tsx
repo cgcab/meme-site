@@ -1,18 +1,22 @@
-import { Box, Button, Flex, Heading, HStack, Icon, IconButton, Input, VStack } from '@chakra-ui/react';
-import { Link } from '@tanstack/react-router';
+import { Box, Button, Flex, HStack, Heading, Icon, IconButton, Input, VStack } from '@chakra-ui/react';
 import { MemePictureProps } from './meme-picture';
 import { Plus, Trash } from '@phosphor-icons/react';
 import { stringsRes } from '../resources/strings';
+import { Link } from '@tanstack/react-router';
 
 export const CaptionSidebar = ({
     texts,
     onAddCaption,
     onDeleteCaption,
+    onEditCaption,
+    onSubmit,
     memePicture,
 }: {
     texts: MemePictureProps['texts'];
     onAddCaption: () => void;
     onDeleteCaption: (index: number) => void;
+    onEditCaption: (index: number, newContent: string) => void;
+    onSubmit: () => void;
     memePicture: { pictureUrl: string; texts: MemePictureProps['texts'] } | undefined;
 }) => (
     <Flex flexDir="column" width="30%" minW="250" height="full" boxShadow="lg">
@@ -23,7 +27,7 @@ export const CaptionSidebar = ({
             <VStack spacing={3}>
                 {texts.map((text, index) => (
                     <Flex key={index} width="full">
-                        <Input value={text.content} mr={1} />
+                        <Input value={text.content} onChange={(e) => onEditCaption(index, e.target.value)} mr={1} />
                         <IconButton
                             onClick={() => onDeleteCaption(index)}
                             aria-label={stringsRes.create.deleteCaption}
@@ -48,7 +52,14 @@ export const CaptionSidebar = ({
             <Button as={Link} to="/" colorScheme="cyan" variant="outline" size="sm" width="full">
                 {stringsRes.common.cancel}
             </Button>
-            <Button colorScheme="cyan" size="sm" width="full" color="white" isDisabled={memePicture === undefined}>
+            <Button
+                colorScheme="cyan"
+                size="sm"
+                width="full"
+                color="white"
+                isDisabled={memePicture === undefined}
+                onClick={onSubmit}
+            >
                 {stringsRes.common.submit}
             </Button>
         </HStack>
