@@ -2,6 +2,7 @@ import { useDropzone } from 'react-dropzone';
 import { MemePicture, MemePictureProps } from './meme-picture';
 import { AspectRatio, Box, Button, Flex, Icon, Text } from '@chakra-ui/react';
 import { Image, Pencil } from '@phosphor-icons/react';
+import { stringsRes } from '../resources/strings';
 
 export type MemeEditorProps = {
     onDrop: (file: File) => void;
@@ -12,9 +13,9 @@ function renderNoPicture() {
     return (
         <Flex flexDir="column" width="full" height="full" alignItems="center" justifyContent="center">
             <Icon as={Image} color="black" boxSize={16} />
-            <Text>Select a picture</Text>
+            <Text>{stringsRes.editor.selectPicture}</Text>
             <Text color="gray.400" fontSize="sm">
-                or drop it in this area
+                {stringsRes.editor.dropPicture}
             </Text>
         </Flex>
     );
@@ -47,7 +48,7 @@ function renderMemePicture(memePicture: MemePictureProps, open: () => void) {
                 position="absolute"
                 onClick={open}
             >
-                Change picture
+                {stringsRes.editor.changePicture}
             </Button>
         </Box>
     );

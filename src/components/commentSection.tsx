@@ -1,4 +1,6 @@
-import { Avatar, Box, Flex, Text, Input, VStack } from '@chakra-ui/react';
+/* eslint-disable */
+import { useState } from 'react';
+import { Avatar, Box, Flex, Text, Input, VStack, Button } from '@chakra-ui/react';
 import { format } from 'timeago.js';
 import { stringsRes } from '../resources/strings';
 import { CommentExtended, User } from '../apiTypes';
@@ -19,6 +21,8 @@ export const CommentSection = ({
     createCommentMutate: (data: { memeId: string; content: string }) => void;
     comments?: CommentExtended[]; // Specify proper type for comments
 }) => {
+    const [currentPage, setCurrentPage] = useState<number>(1);
+
     return (
         <Box mb={6}>
             <form
@@ -76,6 +80,14 @@ export const CommentSection = ({
                     </Flex>
                 ))}
             </VStack>
+            <Button
+                onClick={async () => {
+                    // await loadComments(currentPage + 1); // Load new comments
+                    setCurrentPage((prev: number) => prev + 1); // Increment page
+                }}
+            >
+                Load More
+            </Button>
         </Box>
     );
 };

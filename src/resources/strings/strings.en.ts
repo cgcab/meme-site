@@ -3,6 +3,7 @@ export default {
         cancel: 'Cancel',
         submit: 'Submit',
         description: 'Description:',
+        signout: 'Sign Out',
     },
     home: {
         noMeme: 'No memes available',
@@ -15,6 +16,11 @@ export default {
         uploadPicture: 'Upload your picture',
         describeMeme: 'Describe your meme',
         describeMemePlaceholder: 'Type your description here...',
+    },
+    editor: {
+        selectPicture: 'Select a picture',
+        dropPicture: 'or drop it in this area',
+        changePicture: 'Change picture',
     },
     header: {
         title: 'MemeFactory',

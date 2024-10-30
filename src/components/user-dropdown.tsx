@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CaretDown, CaretUp, SignOut } from '@phosphor-icons/react';
 import { useAuthentication } from '../contexts/authentication';
 import { getUserById } from '../api';
+import { stringsRes } from '../resources/strings';
 
 export const UserDropdown: React.FC = () => {
     const { state, signout } = useAuthentication();
@@ -40,7 +41,7 @@ export const UserDropdown: React.FC = () => {
                     </MenuButton>
                     <MenuList>
                         <MenuItem icon={<Icon as={SignOut} />} onClick={signout}>
-                            Sign Out
+                            {stringsRes.common.signout}
                         </MenuItem>
                     </MenuList>
                 </>
