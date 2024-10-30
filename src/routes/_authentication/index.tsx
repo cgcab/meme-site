@@ -1,21 +1,22 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Flex, StackDivider, Text, VStack } from '@chakra-ui/react';
-import {
-    createMemeComment,
-    getMemeComments,
-    GetMemeCommentsResponse,
-    getMemes,
-    GetMemesResponse,
-    getUserById,
-    // GetUserByIdResponse,
-} from '../../api';
+import { createMemeComment, getMemeComments, getMemes, getUserById } from '../../api';
 import { useAuthToken } from '../../contexts/authentication';
 import { Loader } from '../../components/loader';
 import { useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { stringsRes } from '../../resources/strings';
 import { MemeItem } from '../../components/memeItem';
+import {
+    Comment,
+    CommentExtended,
+    GetMemeCommentsResponse,
+    GetMemesResponse,
+    Meme,
+    MemeExtended,
+    User,
+} from '../../apiTypes';
 
 //======================================//
 //=============== Fetchs ===============//
@@ -36,7 +37,7 @@ const fetchMemes = (token: string, queryClient: QueryClient) => async () => {
 
     // Map over memes to retrieve or cache authors and comments
     return Promise.all(
-        memes.map(async (meme) => {
+        memes.map(async (meme: Meme) => {
             // Retrieve cached author or fetch if not available
             const author = await queryClient.fetchQuery({
                 queryKey: ['user', meme.authorId],
@@ -45,8 +46,9 @@ const fetchMemes = (token: string, queryClient: QueryClient) => async () => {
             });
 
             // Fetch comments for the meme
-            const comments = await fetchComments(token, meme.id, queryClient);
-            return { ...meme, author, comments };
+            // const comments = await fetchComments(token, meme.id, queryClient);
+            // return { ...meme, author, comments };
+            return { ...meme, author };
         }),
     );
 };
@@ -57,14 +59,14 @@ const fetchComments = async (token: string, memeId: string, queryClient: QueryCl
     const firstPage = await getMemeComments(token, memeId, 1);
     comments.push(...firstPage.results);
 
-    const remainingCommentPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
-    for (let i = 0; i < remainingCommentPages; i++) {
-        const page = await getMemeComments(token, memeId, i + 2);
-        comments.push(...page.results);
-    }
+    // const remainingCommentPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
+    // for (let i = 0; i < remainingCommentPages; i++) {
+    //     const page = await getMemeComments(token, memeId, i + 2);
+    //     comments.push(...page.results);
+    // }
 
     return Promise.all(
-        comments.map(async (comment) => {
+        comments.map(async (comment: Comment) => {
             const author = await queryClient.fetchQuery({
                 queryKey: ['user', comment.authorId],
                 queryFn: () => getUserById(token, comment.authorId),
@@ -89,6 +91,7 @@ const MemeFeedPage: React.FC = () => {
     const { isLoading, data: memes } = useQuery({
         queryKey: ['memes'],
         queryFn: fetchMemes(token, queryClient),
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
     // Query for current user data with a 24-hour stale time
@@ -101,9 +104,40 @@ const MemeFeedPage: React.FC = () => {
     const [openedCommentSection, setOpenedCommentSection] = useState<string | null>(null);
     const [commentContent, setCommentContent] = useState<{ [key: string]: string }>({});
 
-    const { mutate } = useMutation({
+    // Load comments when opening a comment section
+    const loadComments = async (memeId: string) => {
+        const comments = await fetchComments(token, memeId, queryClient);
+        queryClient.setQueryData(['memes'], (oldMemes: Meme[] | undefined) => {
+            return oldMemes?.map((meme) => (meme.id === memeId ? { ...meme, comments } : meme));
+        });
+    };
+
+    const { mutate: createCommentMutate } = useMutation({
         mutationFn: async (data: { memeId: string; content: string }) => {
-            await createMemeComment(token, data.memeId, data.content);
+            return await createMemeComment(token, data.memeId, data.content);
+        },
+        onSuccess: (newComment, { memeId }) => {
+            const newCommentExtended: CommentExtended = newComment as CommentExtended;
+            if (user) {
+                newCommentExtended.author = user;
+            }
+
+            // Add new comment to the correct meme in the cache
+            queryClient.setQueryData(['memes'], (oldMemes: MemeExtended[] | undefined) => {
+                return oldMemes?.map((meme) =>
+                    meme.id === memeId
+                        ? {
+                              ...meme,
+                              comments: [newCommentExtended, ...(meme.comments || [])],
+                              commentsCount: meme.commentsCount + 1,
+                          }
+                        : meme,
+                );
+            });
+            setCommentContent((prev) => ({ ...prev, [memeId]: '' }));
+        },
+        onError: (error) => {
+            console.error('Error creating comment:', error);
         },
     });
 
@@ -119,12 +153,17 @@ const MemeFeedPage: React.FC = () => {
                         <MemeItem
                             key={meme.id}
                             meme={meme}
-                            user={user}
+                            user={user as User}
                             commentContent={commentContent}
                             setCommentContent={setCommentContent}
                             openedCommentSection={openedCommentSection}
-                            setOpenedCommentSection={setOpenedCommentSection}
-                            mutate={mutate}
+                            setOpenedCommentSection={(memeId) => {
+                                setOpenedCommentSection(memeId);
+                                if (memeId) {
+                                    loadComments(memeId);
+                                }
+                            }}
+                            createCommentMutate={createCommentMutate}
                         />
                     ))
                 ) : (

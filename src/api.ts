@@ -1,3 +1,11 @@
+import {
+    CreateCommentResponse,
+    LoginResponse,
+    GetUserByIdResponse,
+    GetMemesResponse,
+    GetMemeCommentsResponse,
+} from './apiTypes';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 // Error handling classes
@@ -25,8 +33,9 @@ function checkStatus(response: Response) {
     }
 }
 
-// Login response type
-export type LoginResponse = { jwt: string };
+// ============================= //
+// =========== API ============= //
+// ============================= //
 
 /**
  * Authenticate user and retrieve JWT token
@@ -42,9 +51,6 @@ export async function login(username: string, password: string): Promise<LoginRe
     });
     return checkStatus(response).json();
 }
-
-// GetUserById response type
-export type GetUserByIdResponse = { id: string; username: string; pictureUrl: string };
 
 /**
  * Fetch user data by user ID
@@ -62,21 +68,6 @@ export async function getUserById(token: string, id: string): Promise<GetUserByI
     return checkStatus(response).json();
 }
 
-// GetMemes response type
-export type GetMemesResponse = {
-    total: number;
-    pageSize: number;
-    results: {
-        id: string;
-        authorId: string;
-        pictureUrl: string;
-        description: string;
-        commentsCount: string;
-        texts: { content: string; x: number; y: number }[];
-        createdAt: string;
-    }[];
-};
-
 /**
  * Fetch a paginated list of memes
  * @param token - JWT token for authorization
@@ -92,19 +83,6 @@ export async function getMemes(token: string, page: number): Promise<GetMemesRes
     });
     return checkStatus(response).json();
 }
-
-// GetMemeComments response type
-export type GetMemeCommentsResponse = {
-    total: number;
-    pageSize: number;
-    results: {
-        id: string;
-        authorId: string;
-        memeId: string;
-        content: string;
-        createdAt: string;
-    }[];
-};
 
 /**
  * Fetch comments for a specific meme
@@ -122,15 +100,6 @@ export async function getMemeComments(token: string, memeId: string, page: numbe
     });
     return checkStatus(response).json();
 }
-
-// CreateComment response type
-export type CreateCommentResponse = {
-    id: string;
-    content: string;
-    createdAt: string;
-    authorId: string;
-    memeId: string;
-};
 
 /**
  * Create a new comment on a meme

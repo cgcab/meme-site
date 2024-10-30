@@ -4,6 +4,7 @@ import { format } from 'timeago.js';
 import { MemePicture } from './meme-picture';
 import { CommentSection } from './commentSection';
 import { stringsRes } from '../resources/strings';
+import { MemeExtended, User } from '../apiTypes';
 
 // Individual Meme item component
 export const MemeItem = ({
@@ -13,15 +14,15 @@ export const MemeItem = ({
     setCommentContent,
     openedCommentSection,
     setOpenedCommentSection,
-    mutate,
+    createCommentMutate: createCommentMutate,
 }: {
-    meme: any; // Specify proper type for meme
-    user: any; // Specify proper type for user
+    meme: MemeExtended; // Specify proper type for meme
+    user: User; // Specify proper type for user
     commentContent: { [key: string]: string };
     setCommentContent: (content: { [key: string]: string }) => void;
     openedCommentSection: string | null;
     setOpenedCommentSection: (id: string | null) => void;
-    mutate: (data: { memeId: string; content: string }) => void;
+    createCommentMutate: (data: { memeId: string; content: string }) => void;
 }) => (
     <VStack p={4} width="full" align="stretch">
         <Flex justifyContent="space-between" alignItems="center">
@@ -73,7 +74,7 @@ export const MemeItem = ({
                 user={user}
                 commentContent={commentContent}
                 setCommentContent={setCommentContent}
-                mutate={mutate}
+                createCommentMutate={createCommentMutate}
                 comments={meme.comments}
             />
         </Collapse>
