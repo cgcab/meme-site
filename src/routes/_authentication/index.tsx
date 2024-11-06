@@ -1,6 +1,6 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { ButtonGroup, Flex, IconButton, StackDivider, Text, VStack } from '@chakra-ui/react';
+import { ButtonGroup, Flex, IconButton, StackDivider, Text, VStack, useToast } from '@chakra-ui/react';
 import { CaretLeft, CaretRight, ArrowCircleLeft, ArrowCircleRight } from '@phosphor-icons/react'; // Import Phosphor icons
 import { createMemeComment, getMemeComments, getMemes, getUserById } from '../../api';
 import { useAuthToken } from '../../contexts/authentication';
@@ -18,7 +18,7 @@ import {
     MemeDatas,
     User,
 } from '../../apiTypes';
-import { HOUR_MS, MINUTE_MS } from '../../utils/constants';
+import { HOUR_MS, MINUTE_MS, TOAST_DURATION } from '../../utils/constants';
 
 //======================================//
 //=============== Fetchs ===============//
@@ -83,6 +83,8 @@ const fetchComments = async (token: string, memeId: string, queryClient: QueryCl
 const MemeFeedPage: React.FC = () => {
     const token = useAuthToken();
     const { id } = jwtDecode<{ id: string }>(token);
+
+    const toast = useToast();
 
     const queryClient = useQueryClient();
 
@@ -168,6 +170,12 @@ const MemeFeedPage: React.FC = () => {
             setCommentContent((prev) => ({ ...prev, [memeId]: '' }));
         },
         onError: (error) => {
+            toast({
+                title: stringsRes.error.generic,
+                status: 'error',
+                duration: TOAST_DURATION,
+                isClosable: true,
+            });
             console.error('Error creating comment:', error);
         },
     });

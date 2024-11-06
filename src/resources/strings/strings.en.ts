@@ -17,6 +17,7 @@ export default {
         uploadPicture: 'Upload your picture',
         describeMeme: 'Describe your meme',
         describeMemePlaceholder: 'Type your description here...',
+        created: 'Meme created',
     },
     editor: {
         selectPicture: 'Select a picture',
@@ -53,5 +54,8 @@ export default {
         last: 'Last Page',
         prev: 'Previous Page',
         next: 'Next Page',
+    },
+    error: {
+        generic: 'An error appeared. Try again in a few minutes.',
     },
 };

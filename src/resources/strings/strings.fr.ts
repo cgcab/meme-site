@@ -17,6 +17,7 @@ export default {
         uploadPicture: 'Téléchargez votre image',
         describeMeme: 'Décrivez votre mème',
         describeMemePlaceholder: 'Tapez votre description ici...',
+        created: 'Meme créé',
     },
     header: {
         title: 'MemeFactory',
@@ -47,5 +48,8 @@ export default {
         last: 'Dernière page',
         prev: 'Page précédente',
         next: 'Page suivante',
+    },
+    error: {
+        generic: 'Une erreur est survenue. Veuillez réessayer dans quelques instants',
     },
 };

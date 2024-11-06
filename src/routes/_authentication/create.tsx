@@ -1,4 +1,4 @@
-import { Box, Flex, VStack } from '@chakra-ui/react';
+import { Box, Flex, VStack, useToast } from '@chakra-ui/react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { MemePictureProps } from '../../components/meme-picture';
@@ -9,10 +9,12 @@ import { createMeme } from '../../api';
 import { useAuthToken } from '../../contexts/authentication';
 import { Picture } from '../../apiTypes';
 import { stringsRes } from '../../resources/strings';
+import { TOAST_DURATION } from '../../utils/constants';
 
 const CreateMemePage = () => {
     const token = useAuthToken();
     const navigate = useNavigate();
+    const toast = useToast();
 
     const [picture, setPicture] = useState<Picture | null>(null);
     const [description, setDescription] = useState<string>('');
@@ -51,11 +53,24 @@ const CreateMemePage = () => {
     const handleSubmit = async () => {
         if (picture) {
             await createMeme(token, picture, texts, description)
-                .then((response) => {
-                    console.log('Meme created:', response);
+                .then(() => {
+                    toast({
+                        title: stringsRes.create.created,
+                        status: 'success',
+                        duration: TOAST_DURATION,
+                        isClosable: true,
+                    });
                     navigate({ to: '/' });
                 })
-                .catch((error) => console.error('Error creating meme:', error));
+                .catch((error) => {
+                    toast({
+                        title: stringsRes.error.generic,
+                        status: 'error',
+                        duration: TOAST_DURATION,
+                        isClosable: true,
+                    });
+                    console.error('Error creating meme:', error);
+                });
         }
     };
 
