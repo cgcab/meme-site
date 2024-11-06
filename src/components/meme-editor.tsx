@@ -7,7 +7,7 @@ import { stringsRes } from '../resources/strings';
 export type MemeEditorProps = {
     onDrop: (file: File) => void;
     memePicture?: MemePictureProps | undefined;
-    onUpdateTexts?: (updatedTexts: { content: string; x: number; y: number }[]) => void;
+    onDragStop?: (index: number, x: number, y: number) => void;
 };
 
 function renderNoPicture() {
@@ -25,7 +25,7 @@ function renderNoPicture() {
 function renderMemePicture(
     memePicture: MemePictureProps,
     open: () => void,
-    onUpdateTexts?: (updatedTexts: { content: string; x: number; y: number }[]) => void,
+    onDragStop?: (index: number, x: number, y: number) => void,
 ) {
     return (
         <Box
@@ -41,7 +41,7 @@ function renderMemePicture(
                 },
             }}
         >
-            <MemePicture {...memePicture} onUpdateTexts={onUpdateTexts} />
+            <MemePicture {...memePicture} onDragStop={onDragStop} />
             <Button
                 className="change-picture-button"
                 leftIcon={<Icon as={Pencil} boxSize={4} />}
@@ -59,7 +59,7 @@ function renderMemePicture(
     );
 }
 
-export const MemeEditor: React.FC<MemeEditorProps> = ({ onDrop, memePicture, onUpdateTexts }) => {
+export const MemeEditor: React.FC<MemeEditorProps> = ({ onDrop, memePicture, onDragStop }) => {
     const { getRootProps, getInputProps, open } = useDropzone({
         onDrop: (files: File[]) => {
             if (files.length === 0) {
@@ -83,7 +83,7 @@ export const MemeEditor: React.FC<MemeEditorProps> = ({ onDrop, memePicture, onU
                 px={1}
             >
                 <input {...getInputProps()} />
-                {memePicture ? renderMemePicture(memePicture, open, onUpdateTexts) : renderNoPicture()}
+                {memePicture ? renderMemePicture(memePicture, open, onDragStop) : renderNoPicture()}
             </Box>
         </AspectRatio>
     );

@@ -90,7 +90,8 @@ export const MemeItem = ({
             </LinkBox>
             <Collapse in={openedCommentSection === meme.id} animateOpacity>
                 <CommentSection
-                    meme={meme}
+                    memeId={meme.id}
+                    comments={meme.comments}
                     user={user}
                     commentContent={commentContent}
                     setCommentContent={setCommentContent}

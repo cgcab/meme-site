@@ -38,16 +38,25 @@ const CreateMemePage = () => {
         ]);
     };
 
+    const handleDragStop = (index: number, x: number, y: number) => {
+        const updatedTexts = texts.map((text, i) =>
+            i === index
+                ? {
+                      ...text,
+                      x,
+                      y,
+                  }
+                : text,
+        );
+        setTexts(updatedTexts);
+    };
+
     const handleDeleteCaption = (index: number) => {
         setTexts((prevTexts) => prevTexts.filter((_, i) => i !== index));
     };
 
     const handleEditCaption = (index: number, newContent: string) => {
         setTexts((prevTexts) => prevTexts.map((text, i) => (i === index ? { ...text, content: newContent } : text)));
-    };
-
-    const handleUpdateTexts = (updatedTexts: { content: string; x: number; y: number }[]) => {
-        setTexts(updatedTexts);
     };
 
     const handleSubmit = async () => {
@@ -80,7 +89,7 @@ const CreateMemePage = () => {
         <Flex width="full" height="full">
             <Box flexGrow={1} height="full" p={4} overflowY="auto">
                 <VStack spacing={5} align="stretch">
-                    <UploadSection onDrop={handleDrop} memePicture={memePicture} onUpdateTexts={handleUpdateTexts} />
+                    <UploadSection onDrop={handleDrop} memePicture={memePicture} onDragStop={handleDragStop} />
                     <DescriptionSection description={description} setDescription={setDescription} />
                 </VStack>
             </Box>

@@ -1,25 +1,25 @@
 import { Avatar, Box, Flex, Text, Input, VStack } from '@chakra-ui/react';
 import { format } from 'timeago.js';
 import { stringsRes } from '../resources/strings';
-import { MemeExtended, User } from '../apiTypes';
+import { CommentExtended, User } from '../apiTypes';
 
 // Comment section component
 export const CommentSection = ({
-    meme,
+    memeId,
+    comments,
     user,
     commentContent,
     setCommentContent,
     createCommentMutate,
 }: {
-    meme: MemeExtended;
+    memeId: string;
+    comments?: CommentExtended[];
     user: User;
     commentContent: { [key: string]: string };
     setCommentContent: (content: { [key: string]: string }) => void;
     createCommentMutate: (data: { memeId: string; content: string }) => void;
     loadMoreComments: (memeId: string, page: number) => void;
 }) => {
-    const { id: memeId, comments } = meme;
-
     return (
         <Box mb={6}>
             <form
