@@ -1,27 +1,24 @@
-/* eslint-disable */
-import { useState } from 'react';
-import { Avatar, Box, Flex, Text, Input, VStack, Button } from '@chakra-ui/react';
+import { Avatar, Box, Flex, Text, Input, VStack } from '@chakra-ui/react';
 import { format } from 'timeago.js';
 import { stringsRes } from '../resources/strings';
-import { CommentExtended, User } from '../apiTypes';
+import { MemeExtended, User } from '../apiTypes';
 
 // Comment section component
 export const CommentSection = ({
-    memeId,
+    meme,
     user,
     commentContent,
     setCommentContent,
     createCommentMutate,
-    comments,
 }: {
-    memeId: string;
-    user: User; // Specify proper type for user
+    meme: MemeExtended;
+    user: User;
     commentContent: { [key: string]: string };
     setCommentContent: (content: { [key: string]: string }) => void;
     createCommentMutate: (data: { memeId: string; content: string }) => void;
-    comments?: CommentExtended[]; // Specify proper type for comments
+    loadMoreComments: (memeId: string, page: number) => void;
 }) => {
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const { id: memeId, comments } = meme;
 
     return (
         <Box mb={6}>
@@ -80,14 +77,6 @@ export const CommentSection = ({
                     </Flex>
                 ))}
             </VStack>
-            <Button
-                onClick={async () => {
-                    // await loadComments(currentPage + 1); // Load new comments
-                    setCurrentPage((prev: number) => prev + 1); // Increment page
-                }}
-            >
-                Load More
-            </Button>
         </Box>
     );
 };

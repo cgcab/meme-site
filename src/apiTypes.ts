@@ -24,6 +24,8 @@ export interface Meme {
 export interface MemeExtended extends Meme {
     author: User;
     comments?: CommentExtended[];
+    total?: number;
+    pageSize?: number;
 }
 
 export interface Comment {

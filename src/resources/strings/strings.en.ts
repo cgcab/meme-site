@@ -4,6 +4,7 @@ export default {
         submit: 'Submit',
         description: 'Description:',
         signout: 'Sign Out',
+        loadMore: 'Load More',
     },
     home: {
         noMeme: 'No memes available',

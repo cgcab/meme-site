@@ -23,47 +23,43 @@ import {
 //======================================//
 
 // Fetch memes with authors cached separately to avoid redundant calls
-const fetchMemes = (token: string, queryClient: QueryClient) => async () => {
-    const memes: GetMemesResponse['results'] = [];
-    const firstPage = await getMemes(token, 1);
-    memes.push(...firstPage.results);
+const fetchMemes =
+    (token: string, queryClient: QueryClient, page: number = 1) =>
+    async () => {
+        const memes: GetMemesResponse['results'] = [];
+        const firstPage = await getMemes(token, page);
+        memes.push(...firstPage.results);
 
-    // Removed cause we don't need to charge all the pages at first
-    // const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
-    // for (let i = 0; i < remainingPages; i++) {
-    //     const page = await getMemes(token, i + 2);
-    //     memes.push(...page.results);
-    // }
+        // Removed cause we don't need to charge all the pages at first
+        // const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
+        // for (let i = 0; i < remainingPages; i++) {
+        //     const page = await getMemes(token, i + 2);
+        //     memes.push(...page.results);
+        // }
 
-    // Map over memes to retrieve or cache authors and comments
-    return Promise.all(
-        memes.map(async (meme: Meme) => {
-            // Retrieve cached author or fetch if not available
-            const author = await queryClient.fetchQuery({
-                queryKey: ['user', meme.authorId],
-                queryFn: () => getUserById(token, meme.authorId),
-                staleTime: 1000 * 60 * 60 * 24, // 24 hours
-            });
+        // Map over memes to retrieve or cache authors and comments
+        return Promise.all(
+            memes.map(async (meme: Meme) => {
+                // Retrieve cached author or fetch if not available
+                const author = await queryClient.fetchQuery({
+                    queryKey: ['user', meme.authorId],
+                    queryFn: () => getUserById(token, meme.authorId),
+                    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+                });
 
-            // Fetch comments for the meme
-            // const comments = await fetchComments(token, meme.id, queryClient);
-            // return { ...meme, author, comments };
-            return { ...meme, author };
-        }),
-    );
-};
+                // Fetch comments for the meme
+                // const comments = await fetchComments(token, meme.id, queryClient);
+                // return { ...meme, author, comments };
+                return { ...meme, author };
+            }),
+        );
+    };
 
 // Fetch comments for a meme
-const fetchComments = async (token: string, memeId: string, queryClient: QueryClient) => {
+const fetchComments = async (token: string, memeId: string, queryClient: QueryClient, page: number = 1) => {
     const comments: GetMemeCommentsResponse['results'] = [];
-    const firstPage = await getMemeComments(token, memeId, 1);
+    const firstPage = await getMemeComments(token, memeId, page);
     comments.push(...firstPage.results);
-
-    // const remainingCommentPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
-    // for (let i = 0; i < remainingCommentPages; i++) {
-    //     const page = await getMemeComments(token, memeId, i + 2);
-    //     comments.push(...page.results);
-    // }
 
     return Promise.all(
         comments.map(async (comment: Comment) => {
@@ -74,7 +70,11 @@ const fetchComments = async (token: string, memeId: string, queryClient: QueryCl
             });
             return { ...comment, author };
         }),
-    );
+    ).then((enhancedComments) => ({
+        comments: enhancedComments,
+        total: firstPage.total,
+        pageSize: firstPage.pageSize,
+    }));
 };
 
 //=========================================//
@@ -106,9 +106,18 @@ const MemeFeedPage: React.FC = () => {
 
     // Load comments when opening a comment section
     const loadComments = async (memeId: string) => {
-        const comments = await fetchComments(token, memeId, queryClient);
-        queryClient.setQueryData(['memes'], (oldMemes: Meme[] | undefined) => {
-            return oldMemes?.map((meme) => (meme.id === memeId ? { ...meme, comments } : meme));
+        const commentsData = await fetchComments(token, memeId, queryClient);
+        queryClient.setQueryData(['memes'], (oldMemes: MemeExtended[] | undefined) => {
+            return oldMemes?.map((meme) => (meme.id === memeId ? { ...meme, ...commentsData } : meme));
+        });
+    };
+
+    const loadMoreComments = async (memeId: string, page: number) => {
+        const commentsData = await fetchComments(token, memeId, queryClient, page);
+        queryClient.setQueryData(['memes'], (oldMemes: MemeExtended[] | undefined) => {
+            return oldMemes?.map((meme) =>
+                meme.id === memeId ? { ...meme, comments: [...(meme.comments || []), ...commentsData.comments] } : meme,
+            );
         });
     };
 
@@ -145,6 +154,7 @@ const MemeFeedPage: React.FC = () => {
         return <Loader data-testid="meme-feed-loader" />;
     }
 
+    console.log({ memes });
     return (
         <Flex width="full" height="full" justifyContent="center" overflowY="auto">
             <VStack p={4} width="full" maxWidth={800} divider={<StackDivider border="gray.200" />}>
@@ -164,6 +174,7 @@ const MemeFeedPage: React.FC = () => {
                                 }
                             }}
                             createCommentMutate={createCommentMutate}
+                            loadMoreComments={loadMoreComments}
                         />
                     ))
                 ) : (

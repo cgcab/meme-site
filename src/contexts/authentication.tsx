@@ -1,14 +1,18 @@
 import { useToast } from '@chakra-ui/react';
 import { jwtDecode } from 'jwt-decode';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { MINUTE_MS, TOKEN_EXPIRE_TOAST_DELAY } from '../utils/constants';
+import { MINUTE_MS, TOAST_DURATION, TOKEN_EXPIRE_TOAST_DELAY } from '../utils/constants';
 import { stringsRes } from '../resources/strings';
 
-export type AuthenticationState = {
-    isAuthenticated: boolean;
-    token?: string;
-    userId?: string;
-};
+export type AuthenticationState =
+    | {
+          isAuthenticated: true;
+          token: string;
+          userId: string;
+      }
+    | {
+          isAuthenticated: false;
+      };
 
 export type Authentication = {
     state: AuthenticationState;
@@ -37,7 +41,7 @@ const handleTokenExpiration = (
         toast({
             title: `${stringsRes.toast.tokenExpired} ${TOKEN_EXPIRE_TOAST_DELAY} ${stringsRes.time.minutes}`,
             status: 'warning',
-            duration: 5000,
+            duration: TOAST_DURATION,
             isClosable: true,
         });
     }, expirationThreshold);

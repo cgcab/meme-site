@@ -3,6 +3,8 @@ export default {
         cancel: 'Annuler',
         submit: 'Soumettre',
         description: 'Description :',
+        signout: 'Se déconnecter',
+        loadMore: 'Charger plus',
     },
     home: {
         noMeme: 'Aucun mème disponible',
