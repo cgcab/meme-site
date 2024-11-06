@@ -41,4 +41,11 @@ export default {
     time: {
         minutes: 'minutes',
     },
+    page: {
+        title: 'Page',
+        first: 'Première page',
+        last: 'Dernière page',
+        prev: 'Page précédente',
+        next: 'Page suivante',
+    },
 };

@@ -16,9 +16,11 @@ const MainComponent = () => {
     } = useAuthentication(); // Destructure for direct access
 
     return (
-        <Flex direction="column" width="full" height="full">
+        <Flex direction="column" width="full" height="100vh">
+            {/* Set full viewport height */}
             <Header isAuthenticated={isAuthenticated} />
-            <Flex flexGrow={1} height={0}>
+            <Flex flexGrow={1} direction="column" overflowY="auto">
+                {/* Make content scrollable */}
                 <Outlet />
             </Flex>
         </Flex>
@@ -27,7 +29,7 @@ const MainComponent = () => {
 
 // Header component
 const Header = ({ isAuthenticated }: { isAuthenticated: boolean }) => (
-    <Flex bgColor="cyan.600" p={2} justifyContent="space-between" boxShadow="md">
+    <Flex bgColor="cyan.600" p={2} justifyContent="space-between" boxShadow="md" position="sticky" top="0" zIndex={10}>
         <Heading size="lg" color="white" as={Link} to="/">
             {stringsRes.header.title}
         </Heading>

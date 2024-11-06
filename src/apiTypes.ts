@@ -11,6 +11,12 @@ export interface User {
     pictureUrl: string;
 }
 
+export interface MemeDatas {
+    memes?: MemeExtended[];
+    total?: number;
+    pageSize?: number;
+}
+
 export interface Meme {
     id: string;
     authorId: string;

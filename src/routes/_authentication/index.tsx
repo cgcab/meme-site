@@ -1,10 +1,11 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Flex, StackDivider, Text, VStack } from '@chakra-ui/react';
+import { ButtonGroup, Flex, IconButton, StackDivider, Text, VStack } from '@chakra-ui/react';
+import { CaretLeft, CaretRight, ArrowCircleLeft, ArrowCircleRight } from '@phosphor-icons/react'; // Import Phosphor icons
 import { createMemeComment, getMemeComments, getMemes, getUserById } from '../../api';
 import { useAuthToken } from '../../contexts/authentication';
 import { Loader } from '../../components/loader';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { stringsRes } from '../../resources/strings';
 import { MemeItem } from '../../components/memeItem';
@@ -14,9 +15,10 @@ import {
     GetMemeCommentsResponse,
     GetMemesResponse,
     Meme,
-    MemeExtended,
+    MemeDatas,
     User,
 } from '../../apiTypes';
+import { HOUR_MS, MINUTE_MS } from '../../utils/constants';
 
 //======================================//
 //=============== Fetchs ===============//
@@ -29,13 +31,6 @@ const fetchMemes =
         const memes: GetMemesResponse['results'] = [];
         const firstPage = await getMemes(token, page);
         memes.push(...firstPage.results);
-
-        // Removed cause we don't need to charge all the pages at first
-        // const remainingPages = Math.ceil(firstPage.total / firstPage.pageSize) - 1;
-        // for (let i = 0; i < remainingPages; i++) {
-        //     const page = await getMemes(token, i + 2);
-        //     memes.push(...page.results);
-        // }
 
         // Map over memes to retrieve or cache authors and comments
         return Promise.all(
@@ -52,7 +47,11 @@ const fetchMemes =
                 // return { ...meme, author, comments };
                 return { ...meme, author };
             }),
-        );
+        ).then((enhancedMemes) => ({
+            memes: enhancedMemes,
+            total: firstPage.total,
+            pageSize: firstPage.pageSize,
+        }));
     };
 
 // Fetch comments for a meme
@@ -87,37 +86,59 @@ const MemeFeedPage: React.FC = () => {
 
     const queryClient = useQueryClient();
 
+    // useState
+    const [currentPage, setCurrentPage] = useState(1);
+    const [openedCommentSection, setOpenedCommentSection] = useState<string | null>(null);
+    const [commentContent, setCommentContent] = useState<{ [key: string]: string }>({});
+
+    //===========================================//
+    //=============== React-Query ===============//
+    //==========================================//
     // Query for memes, with author data loaded separately
-    const { isLoading, data: memes } = useQuery({
+    const {
+        isLoading,
+        isFetching,
+        data: memesData,
+        refetch,
+    } = useQuery({
         queryKey: ['memes'],
-        queryFn: fetchMemes(token, queryClient),
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        queryFn: fetchMemes(token, queryClient, currentPage),
+        staleTime: MINUTE_MS * 5, // 5 minutes
     });
 
     // Query for current user data with a 24-hour stale time
     const { data: user } = useQuery({
         queryKey: ['user', id],
         queryFn: () => getUserById(token, id),
-        staleTime: 1000 * 60 * 60 * 24, // 24 hours
+        staleTime: HOUR_MS * 24, // 24 hours
     });
 
-    const [openedCommentSection, setOpenedCommentSection] = useState<string | null>(null);
-    const [commentContent, setCommentContent] = useState<{ [key: string]: string }>({});
+    useEffect(() => {
+        if (currentPage) {
+            refetch();
+        }
+    }, [currentPage, refetch]);
+
+    //========================================//
+    //=============== Comments ===============//
+    //========================================//
 
     // Load comments when opening a comment section
     const loadComments = async (memeId: string) => {
         const commentsData = await fetchComments(token, memeId, queryClient);
-        queryClient.setQueryData(['memes'], (oldMemes: MemeExtended[] | undefined) => {
-            return oldMemes?.map((meme) => (meme.id === memeId ? { ...meme, ...commentsData } : meme));
+        queryClient.setQueryData(['memes'], (oldMemes: MemeDatas) => {
+            const memes = oldMemes?.memes?.map((meme) => (meme.id === memeId ? { ...meme, ...commentsData } : meme));
+            return { ...oldMemes, memes };
         });
     };
 
     const loadMoreComments = async (memeId: string, page: number) => {
         const commentsData = await fetchComments(token, memeId, queryClient, page);
-        queryClient.setQueryData(['memes'], (oldMemes: MemeExtended[] | undefined) => {
-            return oldMemes?.map((meme) =>
+        queryClient.setQueryData(['memes'], (oldMemes: MemeDatas) => {
+            const memes = oldMemes?.memes?.map((meme) =>
                 meme.id === memeId ? { ...meme, comments: [...(meme.comments || []), ...commentsData.comments] } : meme,
             );
+            return { ...oldMemes, memes };
         });
     };
 
@@ -132,8 +153,8 @@ const MemeFeedPage: React.FC = () => {
             }
 
             // Add new comment to the correct meme in the cache
-            queryClient.setQueryData(['memes'], (oldMemes: MemeExtended[] | undefined) => {
-                return oldMemes?.map((meme) =>
+            queryClient.setQueryData(['memes'], (oldMemes: MemeDatas) => {
+                const memes = oldMemes?.memes?.map((meme) =>
                     meme.id === memeId
                         ? {
                               ...meme,
@@ -142,6 +163,7 @@ const MemeFeedPage: React.FC = () => {
                           }
                         : meme,
                 );
+                return { ...oldMemes, memes };
             });
             setCommentContent((prev) => ({ ...prev, [memeId]: '' }));
         },
@@ -150,16 +172,29 @@ const MemeFeedPage: React.FC = () => {
         },
     });
 
-    if (isLoading) {
+    const goToPage = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    if (isLoading || isFetching) {
         return <Loader data-testid="meme-feed-loader" />;
     }
 
-    console.log({ memes });
+    let totalPages = 1;
+    if (memesData) {
+        totalPages = Math.ceil(memesData?.total / memesData?.pageSize);
+    }
+
     return (
-        <Flex width="full" height="full" justifyContent="center" overflowY="auto">
+        <Flex
+            width="full"
+            minHeight="100vh" // Set to 100vh or adjust based on your needs
+            alignItems="center" // Center horizontally
+            direction="column" // Stack elements vertically
+        >
             <VStack p={4} width="full" maxWidth={800} divider={<StackDivider border="gray.200" />}>
-                {memes?.length ? (
-                    memes.map((meme) => (
+                {memesData?.memes?.length ? (
+                    memesData.memes?.map((meme) => (
                         <MemeItem
                             key={meme.id}
                             meme={meme}
@@ -181,6 +216,36 @@ const MemeFeedPage: React.FC = () => {
                     <Text>{stringsRes.home.noMeme}</Text>
                 )}
             </VStack>
+            {/* Pagination Controls */}
+            <ButtonGroup spacing={4} mt={4} paddingBottom={8}>
+                <IconButton
+                    aria-label={stringsRes.page.first}
+                    icon={<CaretLeft size={24} />}
+                    onClick={() => goToPage(1)}
+                    isDisabled={currentPage === 1}
+                />
+                <IconButton
+                    aria-label={stringsRes.page.prev}
+                    icon={<ArrowCircleLeft size={24} />}
+                    onClick={() => goToPage(currentPage - 1)}
+                    isDisabled={currentPage === 1}
+                />
+                <Text fontWeight="bold" alignSelf="center">
+                    {`${stringsRes.page.title} ${currentPage} / ${totalPages}`}
+                </Text>
+                <IconButton
+                    aria-label={stringsRes.page.next}
+                    icon={<ArrowCircleRight size={24} />}
+                    onClick={() => goToPage(currentPage + 1)}
+                    isDisabled={currentPage === totalPages}
+                />
+                <IconButton
+                    aria-label={stringsRes.page.last}
+                    icon={<CaretRight size={24} />}
+                    onClick={() => goToPage(totalPages)}
+                    isDisabled={currentPage === totalPages}
+                />
+            </ButtonGroup>
         </Flex>
     );
 };
