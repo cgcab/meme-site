@@ -95,7 +95,7 @@ describe('routes/login', () => {
             });
 
             await waitFor(() => {
-                expect(screen.getByText(/an unknown error occured, please try again later/i)).toBeInTheDocument();
+                expect(screen.getByText(/An error appeared. Try again in a few minutes./i)).toBeInTheDocument();
             });
         });
 

@@ -40,7 +40,6 @@ export default {
         passwordRequired: 'Password is required',
         buttonText: 'Login',
         wrongCredentials: 'Wrong credentials',
-        unknownError: 'An unknown error occurred, please try again later',
     },
     toast: {
         tokenExpired: 'Your session will expire in',

@@ -40,7 +40,6 @@ export default {
         passwordRequired: 'Le mot de passe est requis',
         buttonText: 'Se connecter',
         wrongCredentials: 'Identifiants incorrects',
-        unknownError: 'Une erreur inconnue est survenue, veuillez réessayer plus tard',
     },
     toast: {
         tokenExpired: 'Votre session va expirer dans',
@@ -56,6 +55,6 @@ export default {
         next: 'Page suivante',
     },
     error: {
-        generic: 'Une erreur est survenue. Veuillez réessayer dans quelques instants',
+        generic: 'Une erreur inconnue est survenue, veuillez réessayer plus tard',
     },
 };

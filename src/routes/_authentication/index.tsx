@@ -80,7 +80,7 @@ const fetchComments = async (token: string, memeId: string, queryClient: QueryCl
 //=============== Component ===============//
 //=========================================//
 
-const MemeFeedPage: React.FC = () => {
+export const MemeFeedPage: React.FC = () => {
     const token = useAuthToken();
     const { id } = jwtDecode<{ id: string }>(token);
 
@@ -257,8 +257,6 @@ const MemeFeedPage: React.FC = () => {
         </Flex>
     );
 };
-
-export default MemeFeedPage;
 
 export const Route = createFileRoute('/_authentication/')({
     component: MemeFeedPage,

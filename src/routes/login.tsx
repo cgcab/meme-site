@@ -19,7 +19,7 @@ function renderError(error: Error) {
     if (error instanceof UnauthorizedError) {
         return <FormErrorMessage>{stringsRes.login.wrongCredentials}</FormErrorMessage>;
     }
-    return <FormErrorMessage>{stringsRes.login.unknownError}</FormErrorMessage>;
+    return <FormErrorMessage>{stringsRes.error.generic}</FormErrorMessage>;
 }
 
 export const LoginPage: React.FC = () => {
@@ -34,7 +34,7 @@ export const LoginPage: React.FC = () => {
         handleSubmit,
         formState: { errors },
     } = useForm<Inputs>({
-        defaultValues: { username: 'MemeMaster', password: 'password' }, //TODO: for Testing only
+        // defaultValues: { username: 'MemeMaster', password: 'password' }, //TODO: for Testing only
     });
 
     const onSubmit: SubmitHandler<Inputs> = (data) => {
