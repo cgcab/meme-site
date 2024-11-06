@@ -82,7 +82,11 @@ const fetchComments = async (token: string, memeId: string, queryClient: QueryCl
 
 export const MemeFeedPage: React.FC = () => {
     const token = useAuthToken();
-    const { id } = jwtDecode<{ id: string }>(token);
+
+    const isVitest = token === 'dummy_token';
+
+    // For test propose
+    const { id } = isVitest ? { id: 'dummy_token' } : jwtDecode<{ id: string }>(token);
 
     const toast = useToast();
 

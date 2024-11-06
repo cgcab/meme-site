@@ -6,9 +6,15 @@ import { handlers } from './mocks/handlers';
 
 const server = setupServer(...handlers);
 
-beforeAll(() => server.listen());
+beforeAll(() => {
+    localStorage.setItem('authToken', 'dummy_token');
+    return server.listen();
+});
 afterEach(() => {
     server.resetHandlers();
     cleanup();
 });
-afterAll(() => server.close());
+afterAll(() => {
+    localStorage.removeItem('authToken');
+    server.close();
+});

@@ -57,6 +57,13 @@ const comments = [
     },
 ];
 
+const createdComment = {
+    id: 'created_comment_id_4',
+    memeId: 'dummy_meme_id_1',
+    authorId: 'dummy_user_id_3',
+    createdAt: '2021-09-01T12:34:00Z',
+};
+
 export const handlers = [
     http.post<{}, { username: string; password: string }>(
         'https://fetestapi.int.mozzaik365.net/api/authentication/login',
@@ -100,5 +107,16 @@ export const handlers = [
             pageSize: memeComments.length,
             results: memeComments,
         });
+    }),
+    http.post<
+        {},
+        {
+            token: string;
+            memeId: string;
+            content: string;
+        }
+    >('https://fetestapi.int.mozzaik365.net/api/memes/:id/comments', async ({ request }) => {
+        const { content } = await request.json();
+        return HttpResponse.json({ ...createdComment, content });
     }),
 ];

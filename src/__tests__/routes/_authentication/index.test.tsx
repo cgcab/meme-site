@@ -1,9 +1,11 @@
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { AuthenticationContext } from '../../../contexts/authentication';
 import { MemeFeedPage } from '../../../routes/_authentication/index';
 import { renderWithRouter } from '../../utils';
+
+const queryClient = new QueryClient();
 
 describe('routes/_authentication/index', () => {
     describe('MemeFeedPage', () => {
@@ -12,7 +14,7 @@ describe('routes/_authentication/index', () => {
                 component: MemeFeedPage,
                 Wrapper: ({ children }) => (
                     <ChakraProvider>
-                        <QueryClientProvider client={new QueryClient()}>
+                        <QueryClientProvider client={queryClient}>
                             <AuthenticationContext.Provider
                                 value={{
                                     state: {
@@ -32,7 +34,7 @@ describe('routes/_authentication/index', () => {
             });
         }
 
-        it('should fetch the memes and display them with their comments', async () => {
+        it('should fetch the memes and display them without their comments', async () => {
             renderMemeFeedPage();
 
             await waitFor(() => {
@@ -64,27 +66,63 @@ describe('routes/_authentication/index', () => {
                 // We check that the right number of comments is displayed
                 expect(screen.getByTestId('meme-comments-count-dummy_meme_id_1')).toHaveTextContent('3 comments');
 
+                // As we don't auto charge the comments now I commented this section
+
                 // We check that the right comments with the right authors are displayed
-                expect(screen.getByTestId('meme-comment-content-dummy_meme_id_1-dummy_comment_id_1')).toHaveTextContent(
-                    'dummy comment 1',
-                );
-                expect(screen.getByTestId('meme-comment-author-dummy_meme_id_1-dummy_comment_id_1')).toHaveTextContent(
-                    'dummy_user_1',
-                );
+                // expect(
+                //     screen.findByTestId('meme-comment-content-dummy_meme_id_1-dummy_comment_id_1'),
+                // ).toHaveTextContent('dummy comment 1');
+                // expect(screen.getByTestId('meme-comment-author-dummy_meme_id_1-dummy_comment_id_1')).toHaveTextContent(
+                //     'dummy_user_1',
+                // );
 
-                expect(screen.getByTestId('meme-comment-content-dummy_meme_id_1-dummy_comment_id_2')).toHaveTextContent(
-                    'dummy comment 2',
-                );
-                expect(screen.getByTestId('meme-comment-author-dummy_meme_id_1-dummy_comment_id_2')).toHaveTextContent(
-                    'dummy_user_2',
-                );
+                // expect(screen.getByTestId('meme-comment-content-dummy_meme_id_1-dummy_comment_id_2')).toHaveTextContent(
+                //     'dummy comment 2',
+                // );
+                // expect(screen.getByTestId('meme-comment-author-dummy_meme_id_1-dummy_comment_id_2')).toHaveTextContent(
+                //     'dummy_user_2',
+                // );
 
-                expect(screen.getByTestId('meme-comment-content-dummy_meme_id_1-dummy_comment_id_3')).toHaveTextContent(
-                    'dummy comment 3',
-                );
-                expect(screen.getByTestId('meme-comment-author-dummy_meme_id_1-dummy_comment_id_3')).toHaveTextContent(
-                    'dummy_user_3',
-                );
+                // expect(screen.getByTestId('meme-comment-content-dummy_meme_id_1-dummy_comment_id_3')).toHaveTextContent(
+                //     'dummy comment 3',
+                // );
+                // expect(screen.getByTestId('meme-comment-author-dummy_meme_id_1-dummy_comment_id_3')).toHaveTextContent(
+                //     'dummy_user_3',
+                // );
+            });
+        });
+
+        it('should be able to add a comment and show it', async () => {
+            renderMemeFeedPage();
+            const testText = 'test comment';
+
+            await waitFor(() => {
+                // Open the comments
+                const openCommentsButton = screen.getByTestId('meme-comments-section-dummy_meme_id_1');
+                fireEvent.click(openCommentsButton);
+            });
+
+            await waitFor(() => {
+                expect(screen.getByText(/dummy comment 1/i)).toBeInTheDocument();
+            });
+
+            await waitFor(() => {
+                // Step 1: Find the input with the placeholder 'Type your comment here...'
+                const input = screen.getByPlaceholderText('Type your comment here...');
+
+                // Step 2: Simulate typing 'test comment' into the input
+                fireEvent.change(input, { target: { value: testText } });
+
+                // Verify that the input's value is updated correctly
+                expect(input).toHaveValue(testText);
+
+                // Step 3: Simulate pressing Enter
+                fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
+                fireEvent.submit(input);
+            });
+
+            await waitFor(() => {
+                expect(screen.getByText(testText)).toBeInTheDocument();
             });
         });
     });
