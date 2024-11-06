@@ -19,6 +19,12 @@ export default {
         describeMemePlaceholder: 'Tapez votre description ici...',
         created: 'Meme créé',
     },
+    editor: {
+        selectPicture: 'Selectionner une image',
+        dropPicture: 'ou déplacer là dans cette zone',
+        changePicture: "Changer d'image",
+        defaultCaption: 'Nouveau texte',
+    },
     header: {
         title: 'MemeFactory',
         createMeme: 'Créer un mème',
