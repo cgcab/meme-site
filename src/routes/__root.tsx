@@ -28,7 +28,7 @@ const MainComponent = () => {
 // Header component
 const Header = ({ isAuthenticated }: { isAuthenticated: boolean }) => (
     <Flex bgColor="cyan.600" p={2} justifyContent="space-between" boxShadow="md">
-        <Heading size="lg" color="white">
+        <Heading size="lg" color="white" as={Link} to="/">
             {stringsRes.header.title}
         </Heading>
         {isAuthenticated && (

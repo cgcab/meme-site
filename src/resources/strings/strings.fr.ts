@@ -33,4 +33,10 @@ export default {
         wrongCredentials: 'Identifiants incorrects',
         unknownError: 'Une erreur inconnue est survenue, veuillez réessayer plus tard',
     },
+    toast: {
+        tokenExpired: 'Votre session va expirer dans',
+    },
+    time: {
+        minutes: 'minutes',
+    },
 };

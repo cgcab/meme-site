@@ -40,4 +40,10 @@ export default {
         wrongCredentials: 'Wrong credentials',
         unknownError: 'An unknown error occurred, please try again later',
     },
+    toast: {
+        tokenExpired: 'Your session will expire in',
+    },
+    time: {
+        minutes: 'minutes',
+    },
 };
